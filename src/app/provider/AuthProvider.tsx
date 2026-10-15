@@ -1,4 +1,11 @@
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import {
+  createContext,
+  PropsWithChildren,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { ActivityIndicator, View } from "react-native";
 
 const AuthContext = createContext({
   isAuthenticated: false,
@@ -6,7 +13,18 @@ const AuthContext = createContext({
   signOut: () => {},
 });
 export default function AuthProvider({ children }: PropsWithChildren) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
+    undefined,
+  );
+  //use effect
+  useEffect(() => {
+    const checkAuth = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setIsAuthenticated(true);
+    };
+    checkAuth();
+  }, []);
+
   // dummy Function
   const signIn = () => {
     setIsAuthenticated(true);
@@ -14,6 +32,13 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   const signOut = () => {
     setIsAuthenticated(false);
   };
+  if (isAuthenticated === undefined) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
   return (
     <AuthContext.Provider value={{ isAuthenticated, signIn, signOut }}>
       {children}
