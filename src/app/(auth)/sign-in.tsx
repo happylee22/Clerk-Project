@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { z } from "zod";
+import { useAuth } from "../provider/AuthProvider";
 
 const signInSchema = z.object({
   email: z.string({ message: "Email is required" }).email(),
@@ -30,11 +31,14 @@ export default function SignInScreen() {
     //defaultValues
   });
   console.log(errors);
-
+  // guard screen
+  const { signIn } = useAuth();
   const OnSignIn = (data: SignInField) => {
     console.log(data.email, data.password);
 
     //Maual Validation
+
+    signIn();
   };
   return (
     <KeyboardAvoidingView
