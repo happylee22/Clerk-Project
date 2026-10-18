@@ -1,7 +1,9 @@
 import CustomButton from "@/component/CustomBtn";
 import CustomInput from "@/component/CustomInput";
+import { useSignUp } from "@clerk/expo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "expo-router";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
@@ -20,7 +22,11 @@ const signUpSchema = z.object({
 });
 type SignInField = z.infer<typeof signUpSchema>;
 export default function SignUpScreen() {
+  const [pendingVerification, setPendingVerification] = useState(false);
+
+  const [errorMsg, setErrorMsg] = useState("");
   const {
+    //react hook
     control,
     handleSubmit,
     formState: { errors },
@@ -29,11 +35,33 @@ export default function SignUpScreen() {
     //defaultValues
   });
   console.log(errors);
+  //the data from zod
+  //cleark Auth
+  const { signUp, fetchStatus } = useSignUp();
+  const onSignUp = async (data: SignInField) => {
+    if (fetchStatus === "fetching") return;
+    setErrorMsg("");
 
-  const OnSignUp = (data: SignInField) => {
-    console.log(data.email, data.password);
+    const { error } = await signUp.password({
+      emailAddress: data.email,
+      password: data.password,
+    });
+    if (error) {
+      console.log("sign up error", JSON.stringify(error, null, 2));
+      setErrorMsg(error.longMessage ?? error.message ?? "Sign up failed");
+      return;
+    }
 
-    //Maual Validation
+    const { error: sendError } = await signUp.verifications.sendEmailCode();
+    if (sendError) {
+      console.log("send code error", JSON.stringify(sendError, null, 2));
+      setErrorMsg(
+        sendError.longMessage ?? sendError.message ?? "Could not send code",
+      );
+      return;
+    }
+
+    setPendingVerification(true);
   };
   return (
     <KeyboardAvoidingView
@@ -59,7 +87,7 @@ export default function SignUpScreen() {
           control={control}
         />
       </View>
-      <CustomButton text={"Sign Up"} onPress={handleSubmit(OnSignUp)} />
+      <CustomButton text={"Sign Up"} onPress={handleSubmit(onSignUp)} />
       <Link href={"/(auth)/sign-in"} style={styles.link}>
         {" "}
         Already Have an Account? Sign In
